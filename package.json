@@ -1,0 +1,30 @@
+{
+  "name": "@tencent/doc-generator-vue3",
+  "version": "1.0.0",
+  "description": "vue单文件组件文档生成器",
+  "scripts": {
+    "dev": "vite",
+    "build": "vue-tsc --noEmit && vite build",
+    "preview": "vite preview"
+  },
+  "files": [
+    "index.js",
+    "scan",
+    "dist"
+  ],
+  "dependencies": {
+    "vue": "^3.2.25",
+    "vuex": "^4.0.2"
+  },
+  "devDependencies": {
+    "@babel/core": "^7.16.7",
+    "@babel/plugin-transform-typescript": "^7.16.7",
+    "@vitejs/plugin-vue": "^2.0.0",
+    "@vue/compiler-sfc": "^3.2.26",
+    "@vuese/parser": "^2.10.3",
+    "jsdoc-api": "^7.1.0",
+    "typescript": "^4.4.4",
+    "vite": "^2.7.2",
+    "vue-tsc": "^0.29.8"
+  }
+}
