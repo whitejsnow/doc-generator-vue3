@@ -22,7 +22,9 @@
     "vuex": "^4.0.2"
   },
   "devDependencies": {
+    "@tencent/eslint-config-tencent": "^0.16.0",
     "@vitejs/plugin-vue": "^2.0.0",
+    "eslint": "^8.6.0",
     "typescript": "^4.4.4",
     "vite": "^2.7.2",
     "vue-tsc": "^0.29.8"

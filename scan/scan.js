@@ -10,7 +10,7 @@ exports.scanFile = scanFile;
 
 function scanFold(foldPath) {
   const vueFiles = getVueFiles(foldPath);
-  console.log(vueFiles)
+  console.log(vueFiles);
   const res = vueFiles.map(filePath => scanFile(filePath)).filter(item => !!item);
   return res;
 }
@@ -50,7 +50,7 @@ function scanFile(filePath) {
   resolveRes.slots && resolveRes.slots.forEach(slot => {
     slot.desc = slot.describe;
     delete slot.describe;
-  })
+  });
   return resolveRes;
 }
 
@@ -130,16 +130,21 @@ function resolveDoclet(doclet, res, module) {
   }
 }
 
+// 解析出 jsdoc longname 里的 prop 名字极其描述字段
 function getProp(longname, module) {
+  // eg: module:moduleName.props.propName
   let res = new RegExp(`^module:${module}\\.props\\.([^\\.]+)$`).exec(longname);
   if (res) return [res[1]];
 
+  // eg: module:moduleName.props.propName.type
   res = new RegExp(`^module:${module}\\.props\\.([^\\.]+)\\.([^\\.]+)$`).exec(longname);
   if (res) return [res[1], res[2]];
 
+  // eg: module:moduleName~props，这种是 defineProps 的情形
   res = new RegExp(`^module:${module}~([^\\.]+)$`).exec(longname);
   if (res) return [res[1]];
 
+  // eg: module:moduleName~props.propName，这种是 defineProps 的情形
   res = new RegExp(`^module:${module}~([^\\.]+)\\.([^\\.]+)$`).exec(longname);
   if (res) return [res[1], res[2]];
 
