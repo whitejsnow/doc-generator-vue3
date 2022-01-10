@@ -11,7 +11,7 @@ exports.scanFile = scanFile;
 function scanFold(foldPath) {
   const vueFiles = getVueFiles(foldPath);
   console.log(vueFiles)
-  const res = vueFiles.map(filePath => scanFile(filePath));
+  const res = vueFiles.map(filePath => scanFile(filePath)).filter(item => !!item);
   return res;
 }
 
@@ -38,9 +38,12 @@ function scanFile(filePath) {
   const jsdocRes = jsdoc.explainSync({
     source: scriptContent,
   });
+  const module = jsdocRes.find(item => item.kind === 'module' && item.name);
+  if (!module) return null;
+
   const resolveRes = {};
   jsdocRes.forEach((item) => {
-    resolveDoclet(item, resolveRes);
+    resolveDoclet(item, resolveRes, module.name);
   });
   const vueseRes = vueseParser(`<template>${out.descriptor.template.content}</template>`);
   resolveRes.slots = vueseRes.slots;
@@ -51,7 +54,7 @@ function scanFile(filePath) {
   return resolveRes;
 }
 
-function resolveDoclet(doclet, res) {
+function resolveDoclet(doclet, res, module) {
   const { name, kind, params, description, longname, meta, undocumented } = doclet;
 
   switch (kind) {
@@ -62,30 +65,29 @@ function resolveDoclet(doclet, res) {
     }
     case 'member': {
       if (!res.props) res.props = [];
-      if (longname.includes('~')) {
-        const [propName, propDescriptor] = longname.split('~')[1].split('.');
-        let propObj = res.props.find(item => item.name === propName);
-        if (!propDescriptor) {
-          if (undocumented) {
-            return;
-          }
-          if (!propObj) {
-            propObj = {
-              name: propName,
-            };
-            if (description) {
-              propObj.desc = description;
-            }
-            if (meta.code.type === 'Identifier') {
-              propObj.type = meta.code.value;
-            }
-            res.props.push(propObj);
-          }
+
+      const [propName, propDescriptor] = getProp(longname, module);
+      let propObj = res.props.find(item => item.name === propName);
+      if (!propDescriptor) {
+        if (undocumented) {
+          return;
         }
-        if (propDescriptor && 'value' in meta.code && propObj) {
-          const v = meta.code.value;
-          propObj[propDescriptor] = propDescriptor === 'type' ? v : JSON.stringify(v);
+        if (!propObj) {
+          propObj = {
+            name: propName,
+          };
+          if (description) {
+            propObj.desc = description;
+          }
+          if (meta.code.type === 'Identifier') {
+            propObj.type = meta.code.value;
+          }
+          res.props.push(propObj);
         }
+      }
+      if (propDescriptor && 'value' in meta.code && propObj) {
+        const v = meta.code.value;
+        propObj[propDescriptor] = propDescriptor === 'type' ? v : JSON.stringify(v);
       }
       break;
     }
@@ -126,4 +128,20 @@ function resolveDoclet(doclet, res) {
       break;
     }
   }
+}
+
+function getProp(longname, module) {
+  let res = new RegExp(`^module:${module}\\.props\\.([^\\.]+)$`).exec(longname);
+  if (res) return [res[1]];
+
+  res = new RegExp(`^module:${module}\\.props\\.([^\\.]+)\\.([^\\.]+)$`).exec(longname);
+  if (res) return [res[1], res[2]];
+
+  res = new RegExp(`^module:${module}~([^\\.]+)$`).exec(longname);
+  if (res) return [res[1]];
+
+  res = new RegExp(`^module:${module}~([^\\.]+)\\.([^\\.]+)$`).exec(longname);
+  if (res) return [res[1], res[2]];
+
+  return [];
 }

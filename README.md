@@ -6,3 +6,4 @@ vue sfc 文档生成器
 ## TODO
 jsdoc扫描结果支持自定义过滤
 解析props required
+支持扫描没有注释的props
