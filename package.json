@@ -1,10 +1,10 @@
 {
   "name": "@tencent/doc-generator-vue3",
-  "version": "1.0.1",
+  "version": "1.0.3",
   "description": "vue单文件组件文档生成器",
   "scripts": {
     "dev": "vite",
-    "build": "vue-tsc --noEmit && vite build",
+    "build": "vite build",
     "preview": "vite preview"
   },
   "files": [

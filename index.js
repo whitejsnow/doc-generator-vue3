@@ -3,25 +3,28 @@ const fs = require('fs');
 const path = require('path');
 const mkdirp = require('mkdirp');
 
-const build = async (foldPath, dest) => {
-  const res = scanFold(foldPath);
+const DEFAULT_DOC_TITLE = '组件库';
+
+const build = async ({inputDir, outDir, docTitle = DEFAULT_DOC_TITLE}) => {
+  const res = scanFold(inputDir);
 
   getFiles('./dist').forEach(([relFilePath, absFilePath]) => {
-    const finalDest = path.join(dest, path.relative('dist', relFilePath));
-    mkdirp.sync(path.dirname(finalDest));
-    fs.copyFileSync(absFilePath, finalDest);
+    const dest = path.join(outDir, path.relative('dist', relFilePath));
+    mkdirp.sync(path.dirname(dest));
+    fs.copyFileSync(absFilePath, dest);
   })
 
-  let html = fs.readFileSync(path.resolve(__dirname, './dist/index.html'));
-  html = insert(html, res);
-  fs.writeFileSync(path.join(dest, './index.html'), html)
+  let html = fs.readFileSync(path.resolve(__dirname, './dist/index.html'), 'utf8');
+  html = insert(html, res, docTitle);
+  fs.writeFileSync(path.join(outDir, './index.html'), html)
 }
 
 exports.build = build;
 exports.scanFile = scanFile;
 exports.scanFold = scanFold;
 
-const insert = (html, json) => {
+const insert = (html, json, docTitle) => {
+  html = html.replace(/<title>(.*?)<\/title>/, `<title>${docTitle}</title>`)
   const index = html.indexOf('<head>');
   return html.slice(0, index + 6) + `<script>window.rawData=${JSON.stringify(json)}</script>` + html.slice(index + 6);
 }
