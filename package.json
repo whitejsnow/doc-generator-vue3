@@ -19,6 +19,7 @@
     "@vuese/parser": "^2.10.3",
     "jsdoc-api": "^7.1.0",
     "vue": "^3.2.25",
+    "vue-template-compiler": "^2.5.21",
     "vuex": "^4.0.2"
   },
   "devDependencies": {

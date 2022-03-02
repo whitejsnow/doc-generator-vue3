@@ -1,12 +1,28 @@
 const path = require('path');
-const jsdoc = require('jsdoc-api');
 const fs = require('fs');
 const compiler = require('@vue/compiler-sfc');
-const babel = require('@babel/core');
-const vueseParser = require('@vuese/parser').parser;
+// const babel = require('@babel/core');
+const traverse = require('@babel/traverse').default;
+const babelParser = require('@babel/parser');
+const { compile } = require('vue-template-compiler/build');
+
+const { getProps } = require('./get-props');
+const { getMethods } = require('./get-methods');
+const { getContext } = require('./get-events');
+const { parseTemplate } = require('./get-slots');
+
 
 exports.scanFold = scanFold;
 exports.scanFile = scanFile;
+
+function demo() {
+  const res1 = scanFile('./scan/demo_option.vue');
+  fs.writeFileSync('./scan/res_option.json', JSON.stringify(res1));
+  const res2 = scanFile('./scan/demo_setup.vue');
+  fs.writeFileSync('./scan/res_setup.json', JSON.stringify(res2));
+}
+demo();
+
 
 function scanFold(foldPath) {
   const vueFiles = getVueFiles(foldPath);
@@ -31,122 +47,31 @@ function getVueFiles(dir, res = []) {
 function scanFile(filePath) {
   const fileContent = fs.readFileSync(filePath, 'utf-8');
   const out = compiler.parse(fileContent);
-  let scriptContent = (out.descriptor.scriptSetup || out.descriptor.script).content;
-  scriptContent = babel.transformSync(scriptContent, {
-    plugins: ['@babel/plugin-transform-typescript'],
-  }).code;
-  const jsdocRes = jsdoc.explainSync({
-    source: scriptContent,
+  const scriptContent = (out.descriptor.scriptSetup || out.descriptor.script).content;
+
+  const astJS = babelParser.parse(scriptContent, {
+    sourceType: 'module',
+    plugins: [
+      'objectRestSpread',
+      'dynamicImport',
+      'decorators-legacy',
+      'classProperties',
+      'typescript',
+      'jsx',
+    ],
   });
-  const module = jsdocRes.find(item => item.kind === 'module' && item.name);
-  if (!module) return null;
+  const astTemplate = compile(out.descriptor.template.content, {
+    comments: true,
+  }).ast;
 
-  const resolveRes = {};
-  jsdocRes.forEach((item) => {
-    resolveDoclet(item, resolveRes, module.name);
-  });
-  const vueseRes = vueseParser(`<template>${out.descriptor.template.content}</template>`);
-  resolveRes.slots = vueseRes.slots;
-  resolveRes.slots && resolveRes.slots.forEach(slot => {
-    slot.desc = slot.describe;
-    delete slot.describe;
-  });
-  return resolveRes;
-}
+  const [getEvents, eventVisitor] = getContext(astJS);
 
-function resolveDoclet(doclet, res, module) {
-  const { name, kind, params, description, longname, meta, undocumented } = doclet;
+  traverse(astJS, eventVisitor);
 
-  switch (kind) {
-    case 'module': {
-      res.name = name;
-      res.desc = description;
-      break;
-    }
-    case 'member': {
-      if (!res.props) res.props = [];
-
-      const [propName, propDescriptor] = getProp(longname, module);
-      let propObj = res.props.find(item => item.name === propName);
-      if (!propDescriptor) {
-        if (undocumented) {
-          return;
-        }
-        if (!propObj) {
-          propObj = {
-            name: propName,
-          };
-          if (description) {
-            propObj.desc = description;
-          }
-          if (meta.code.type === 'Identifier') {
-            propObj.type = meta.code.value;
-          }
-          res.props.push(propObj);
-        }
-      }
-      if (propDescriptor && 'value' in meta.code && propObj) {
-        const v = meta.code.value;
-        propObj[propDescriptor] = propDescriptor === 'type' ? v : JSON.stringify(v);
-      }
-      break;
-    }
-    case 'function': {
-      if (undocumented) return;
-      if (!res.methods) res.methods = [];
-      res.methods.push({
-        name,
-        desc: description,
-        params: params && params.map((item) => {
-          const type = (item.type && item.type.names && item.type.names) || '';
-          return {
-            name: item.name,
-            desc: item.description,
-            type,
-            defaultvalue: item.defaultvalue,
-            optional: item.optional,
-          };
-        }),
-      });
-      break;
-    }
-    case 'event': {
-      if (!res.events) res.events = [];
-      const [eventName, eventDesc] = name.split(' ');
-      res.events.push({
-        name: eventName || '',
-        desc: eventDesc || eventName || '',
-        params: params && params.map((item) => {
-          const type = (item.type && item.type.names && item.type.names) || '';
-          return {
-            name: item.name,
-            desc: item.description,
-            type,
-          };
-        }),
-      });
-      break;
-    }
-  }
-}
-
-// 解析出 jsdoc longname 里的 prop 名字极其描述字段
-function getProp(longname, module) {
-  // eg: module:moduleName.props.propName
-  let res = new RegExp(`^module:${module}\\.props\\.([^\\.]+)$`).exec(longname);
-  if (res) return [res[1]];
-
-  // eg: module:moduleName.props.propName.type
-  res = new RegExp(`^module:${module}\\.props\\.([^\\.]+)\\.([^\\.]+)$`).exec(longname);
-  if (res) return [res[1], res[2]];
-
-  // eg: module:moduleName~props，这种是 defineProps 的情形
-  res = new RegExp(`^module:${module}~([^\\.]+)$`).exec(longname);
-  if (res) return [res[1]];
-
-  // eg: module:moduleName~props.propName，这种是 defineProps 的情形
-  res = new RegExp(`^module:${module}~([^\\.]+)\\.([^\\.]+)$`).exec(longname);
-  if (res) return [res[1], res[2]];
-
-  return [];
+  return {
+    props: getProps(astJS),
+    methods: getMethods(astJS),
+    events: getEvents(),
+    slots: parseTemplate(astTemplate),
+  };
 }
