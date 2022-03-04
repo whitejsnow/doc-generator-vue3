@@ -4,21 +4,17 @@ module.exports = {
   parseTemplate,
 };
 
-function parseTemplate(templateAst, result) {
+function parseTemplate(templateAst, result, parent) {
   const slots = result || [];
-  const parent = templateAst.parent
   if (templateAst.type === 1) {
     if (templateAst.tag === 'slot') {
       const slot = {
         name: 'default',
         desc: '',
-        backerDesc: '',
-        bindings: {}
       }
-      slot.bindings = extractAndFilterAttr(templateAst.attrsMap)
-      if (slot.bindings.name) {
-        slot.name = slot.bindings.name
-        delete slot.bindings.name
+      const nameProp = templateAst.props.find(item => item.name === 'name' && item.type === 6);
+      if (nameProp && nameProp.value.type === 2 && nameProp.value.content) {
+        slot.name = nameProp.value.content;
       }
       if (parent) {
         const list = parent.children
@@ -35,47 +31,20 @@ function parseTemplate(templateAst, result) {
         const copies = list.slice(0, currentSlotIndex).reverse()
         for (let i = 0; i < copies.length; i++) {
           let el = copies[i]
-          if (el.type !== 3 || (!el.isComment && el.text.trim())) break
-          if (
-            el.isComment &&
-            !(parent.tag === 'slot' && parent.children[0] === el)
-          ) {
-            slot.desc = el.text.trim()
+          if (el.type === 3) {
+            slot.desc = el.content.trim()
             break
           }
-        }
-
-        // Find the first child comment node as a description of the default slot content
-        if (templateAst.children.length) {
-          for (let i = 0; i < templateAst.children.length; i++) {
-            let el = templateAst.children[i]
-            if (el.type !== 3 || (!el.isComment && el.text.trim())) break
-            if (el.isComment) {
-              slot.backerDesc = el.text.trim()
-              break
-            }
-          }
+          if (!(el.type === 2 && !el.content.trim())) break
         }
       }
-      slots.push(slot);
+      if (!slots.some(item => item.name === slot.name)) {
+        slots.push(slot);
+      }
     }
     for (let i = 0; i < templateAst.children.length; i++) {
-      parseTemplate(templateAst.children[i], slots)
+      parseTemplate(templateAst.children[i], slots, templateAst)
     }
   }
   return slots;
-}
-
-const dirRE = /^(v-|:|@)/
-const allowRE = /^(v-bind|:)/
-function extractAndFilterAttr(attrsMap) {
-  const res = {}
-  const keys = Object.keys(attrsMap)
-  for (let i = 0; i < keys.length; i++) {
-    const key = keys[i]
-    if (!dirRE.test(key) || allowRE.test(key)) {
-      res[key.replace(allowRE, '')] = attrsMap[key]
-    }
-  }
-  return res
 }

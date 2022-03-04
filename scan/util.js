@@ -4,39 +4,62 @@ module.exports = {
   isCall,
   getCompOptionsNode,
   getValueOfObjectNode,
-  getProps,
   getGlobalCallArg,
   getFunctionDefinitions,
   getPropertyOfObjectNode,
 }
 
 const bt = require('@babel/types');
-
-const methodReg = /\n\s*\*\s*@method\s*\n/;
-const methodTag = '@method';
+const { parse: parseTag } = require('./jsdoc-tag');
 
 function getComment(commentNode) {
   if (!commentNode || !commentNode.length) {
-    return { desc: [] };
+    return { desc: '' };
   }
 
+  let comments;
   if (commentNode[0].type === 'CommentBlock') {
     const raw = commentNode[0].value;
     const reg = /\*(.+?)\n/g;
-    const comments = [];
+    comments = [];
     for (let res = reg.exec(raw); res; res = reg.exec(raw)) {
       comments.push(res[1].trim());
     }
-    return {
-      desc: comments.join(),
-      methodTag: methodReg.test(raw),
-    };
+  } else {
+    const commentLines = commentNode.filter(item => item.type === 'CommentLine');
+    comments = commentLines.map(item => item.value.trim());
   }
 
-  const commentLines = commentNode.filter(item => item.type === 'CommentLine');
+  const params = [];
+  const desc = [];
+  let event;
+  let methodTag;
+  let module;
+  comments.forEach(line => {
+    if (line.startsWith('@param ')) {
+      params.push(parseTag(line.substring(6)));
+    } else if (line.startsWith('@event ')) {
+      const res = line.split(' ');
+      if (res[1]) {
+        event = res[1];
+      }
+      if (res[2]) {
+        desc.push(res[2]);
+      }
+    } else if (line === '@method') {
+      methodTag = true;
+    } else if (line.startsWith('@module ')) {
+      module = line.split(' ')[1];
+    } else {
+      desc.push(line);
+    }
+  });
   return {
-    desc: commentLines.map(item => item.value.trim()).join(),
-    methodTag: commentLines.some(item => item.value.trim() === methodTag),
+    desc: desc.join(' '),
+    methodTag,
+    params,
+    event,
+    module,
   };
 }
 
@@ -45,7 +68,10 @@ function stringifyPropertyValue(node) {
     case 'Identifier':
       return node.name;
     case 'BooleanLiteral':
+    case 'NumericLiteral':
       return String(node.value);
+    case 'StringLiteral':
+      return JSON.stringify(node.value);
     case 'ArrowFunctionExpression':
       return '';
     default:
@@ -92,25 +118,33 @@ function getPropertyOfObjectNode(node, key) {
   return node.properties.find(item => bt.isIdentifier(item.key) && item.key.name === key);
 }
 
-function getProps(ast) {
-  const options = getCompOptionsNode(ast);
-  if (options) {
-    return getValueOfObjectNode(options, 'prop');
-  }
+// function getProps(ast) {
+//   const options = getCompOptionsNode(ast);
+//   if (options) {
+//     return getValueOfObjectNode(options, 'prop');
+//   }
 
-  return getGlobalCallArg(ast, 'defineProps');
-}
+//   return getGlobalCallArg(ast, 'defineProps');
+// }
 
 function getGlobalCallArg(ast, calleeName) {
   const body = ast.program.body;
   const result = body.map(item => {
+    let callExp;
     if (bt.isExpressionStatement(item)) {
-      const { expression } = item;
-      if (isCall(expression, calleeName)) {
-        if (bt.isObjectExpression(expression.arguments[0])) {
-          return expression.arguments[0];
-        }
-      }
+      callExp = item.expression;
+      // const { expression } = item;
+      // if (isCall(expression, calleeName)) {
+      //   if (bt.isObjectExpression(expression.arguments[0])) {
+      //     return expression.arguments[0];
+      //   }
+      // }
+    } else if (bt.isVariableDeclaration(item)) {
+      const declaration = item.declarations[0];
+      callExp = declaration ? declaration.init : null;
+    }
+    if (callExp && isCall(callExp, calleeName)) {
+      return callExp.arguments[0];
     }
     return null;
   });
@@ -125,7 +159,7 @@ function getFunctionDefinitions(body) {
         // function fn() {}
         return {
           name: node.id.name,
-          desc: getComment(node.leadingComments).desc,
+          comment: getComment(node.leadingComments),
         }
       }
     }
@@ -138,7 +172,7 @@ function getFunctionDefinitions(body) {
             // const fn = () => {}
             return {
               name: declaration.id.name,
-              desc: getComment(node.leadingComments).desc,
+              comment: getComment(node.leadingComments),
             }
           }
         }

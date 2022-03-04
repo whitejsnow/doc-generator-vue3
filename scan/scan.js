@@ -4,24 +4,25 @@ const compiler = require('@vue/compiler-sfc');
 // const babel = require('@babel/core');
 const traverse = require('@babel/traverse').default;
 const babelParser = require('@babel/parser');
-const { compile } = require('vue-template-compiler/build');
+// const { compile } = require('vue-template-compiler/build');
 
 const { getProps } = require('./get-props');
 const { getMethods } = require('./get-methods');
 const { getContext } = require('./get-events');
 const { parseTemplate } = require('./get-slots');
+const { getModule } = require('./get-module');
 
 
 exports.scanFold = scanFold;
 exports.scanFile = scanFile;
 
-function demo() {
-  const res1 = scanFile('./scan/demo_option.vue');
-  fs.writeFileSync('./scan/res_option.json', JSON.stringify(res1));
-  const res2 = scanFile('./scan/demo_setup.vue');
-  fs.writeFileSync('./scan/res_setup.json', JSON.stringify(res2));
-}
-demo();
+// function demo() {
+//   const res1 = scanFile('./scan/demo_option.vue');
+//   fs.writeFileSync('./scan/res_option.json', JSON.stringify(res1));
+//   // const res2 = scanFile('./scan/demo_setup.vue');
+//   // fs.writeFileSync('./scan/res_setup.json', JSON.stringify(res2));
+// }
+// demo();
 
 
 function scanFold(foldPath) {
@@ -60,18 +61,33 @@ function scanFile(filePath) {
       'jsx',
     ],
   });
-  const astTemplate = compile(out.descriptor.template.content, {
-    comments: true,
-  }).ast;
+  // const astTemplate = compile(out.descriptor.template.content, {
+  //   comments: true,
+  // }).ast;
+  const astTemplate = out.descriptor.template.ast;
+  // fs.writeFileSync('./scan/temp_2.json', JSON.stringify(astTemplate, (k, v) => k === 'parent' ? k : v));
+  // fs.writeFileSync('./scan/temp_3.json', JSON.stringify(out.descriptor.template.ast, (k, v) => k === 'parent' ? k : v));
+  // fs.writeFileSync('./scan/temp_3_attrs.json', JSON.stringify(out.descriptor.template.attrs));
 
   const [getEvents, eventVisitor] = getContext(astJS);
 
-  traverse(astJS, eventVisitor);
+  if (eventVisitor) {
+    traverse(astJS, eventVisitor);
+  }
 
-  return {
-    props: getProps(astJS),
-    methods: getMethods(astJS),
-    events: getEvents(),
-    slots: parseTemplate(astTemplate),
-  };
+  const fileName = path.basename(filePath).replace(path.extname(filePath), '');
+  const module = getModule(astJS, fileName);
+
+  if (module && module.module) {
+    return {
+      name: module.module,
+      desc: module.desc,
+      props: getProps(astJS),
+      methods: getMethods(astJS),
+      events: getEvents(),
+      slots: parseTemplate(astTemplate),
+    };
+  }
+
+  return null;
 }

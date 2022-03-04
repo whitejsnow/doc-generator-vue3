@@ -7,13 +7,19 @@ const traverse = require("@babel/traverse").default;
 const { getComment, getCompOptionsNode, isCall } = require('./util');
 
 function collect(node, arr, commentNode) {
-  const firstArg = node.arguments[0]
-  if (firstArg && bt.isStringLiteral(firstArg)) {
-    if (!arr.some(item => item.name === firstArg.value)) {
+  const firstArg = node.arguments[0];
+  if (firstArg) {
+    let name = bt.isStringLiteral(firstArg) ? firstArg.value : null;
+    const comment = getComment(commentNode);
+    if (!name) {
+      name = comment.event;
+    }
+    if (name && !arr.some(item => item.name === name)) {
       arr.push({
-        name: firstArg.value,
-        desc: getComment(commentNode).desc,
-      })
+        name,
+        desc: comment.desc,
+        params: comment.params,
+      });
     }
   }
 }
@@ -64,7 +70,7 @@ function getContext(ast) {
       && node.declarations[0].init.callee.name === 'defineEmits'
   })
   if (!defineEmitsNode) {
-    return;
+    return [() => events];
   }
   const emitIdentifier = defineEmitsNode.declarations[0].id.name
 

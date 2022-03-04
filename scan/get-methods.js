@@ -23,37 +23,43 @@ function getMethods(ast) {
     const optionResult = parseMethodsObject(methodsInOption, [], true);
     const setupResult = parseMethodsInSetup(setupNode);
     return optionResult.concat(setupResult);
-  } else {
-    const methodsInDefineExpose = getGlobalCallArg(ast, 'defineExpose');
-    const fnInContext = getFunctionDefinitions(ast.program.body);
-    return parseMethodsObject(methodsInDefineExpose, fnInContext);
   }
+  const methodsInDefineExpose = getGlobalCallArg(ast, 'defineExpose');
+  const fnInContext = getFunctionDefinitions(ast.program.body);
+  return parseMethodsObject(methodsInDefineExpose, fnInContext);
 }
 
 function parseMethodsObject(node, fnInContext = [], needMethodTag = false) {
   if (!node || !bt.isObjectExpression(node)) return [];
 
-  return node.properties.map(entry => {
+  const res = [];
+  node.properties.forEach(entry => {
+    if (!entry.key) return;
+
     const name = entry.key.name;
-    let desc;
+    let item;
     if (entry.leadingComments) {
-      const res = getComment(entry.leadingComments);
-      if (!needMethodTag || needMethodTag && res.methodTag) {
-        desc = res.desc;
+      const comment = getComment(entry.leadingComments);
+      if (!needMethodTag || (needMethodTag && comment.methodTag)) {
+        item = comment;
       }
     } else {
       const fn = fnInContext.find(fn => fn.name === name);
-      desc = fn ? fn.desc : null;
+      item = fn ? fn.comment : null;
     }
-    return {
-      name,
-      desc,
+    if (item) {
+      res.push({
+        name,
+        desc: item.desc,
+        params: item.params,
+      });
     }
-  }).filter(item => item.desc)
+  });
+  return res;
 }
 
 function parseMethodsInSetup(node) {
-  if (!node) return []
+  if (!node) return [];
 
   const ctxParamNode = node.params[1];
   const body = node.body.body;

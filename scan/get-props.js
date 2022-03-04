@@ -1,8 +1,8 @@
 module.exports = {
   getProps,
-}
+};
 
-const { isObjectExpression } = require('@babel/types');
+const bt = require('@babel/types');
 const {
   getComment,
   stringifyPropertyValue,
@@ -14,24 +14,27 @@ const {
 function getProps(ast) {
   const propsObj = getPropsObject(ast);
   if (propsObj) {
-    return parsePropsObject(propsObj)
+    return parsePropsObject(propsObj);
   }
   return [];
 }
 function getPropsObject(ast) {
   const options = getCompOptionsNode(ast);
-  if (options) {
-    return getValueOfObjectNode(options, 'props');
-  }
+  const propsObj = options
+    ? getValueOfObjectNode(options, 'props')
+    : getGlobalCallArg(ast, 'defineProps');
 
-  return getGlobalCallArg(ast, 'defineProps');
+  if (bt.isObjectExpression(propsObj)) {
+    return propsObj;
+  }
+  return null;
 }
 
 function parsePropsObject(node) {
-  if (!node || !isObjectExpression(node)) return [];
+  if (!node || !bt.isObjectExpression(node)) return [];
 
   return node.properties.map(entry => {
-    if (entry.value.type === 'ObjectExpression') {
+    if (bt.isObjectExpression(entry.value)) {
       const res = {
         name: entry.key.name,
         desc: getComment(entry.leadingComments).desc,
@@ -40,7 +43,8 @@ function parsePropsObject(node) {
         res[item.key.name] = stringifyPropertyValue(item.value);
       })
       return res;
-    } else if (entry.value.type === 'Identifier') {
+    }
+    if (bt.isIdentifier(entry.value)) {
       return {
         name: entry.key.name,
         desc: getComment(entry.leadingComments).desc,
