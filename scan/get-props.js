@@ -33,15 +33,15 @@ function getPropsObject(ast) {
 function parsePropsObject(node) {
   if (!node || !bt.isObjectExpression(node)) return [];
 
-  return node.properties.map(entry => {
+  return node.properties.map((entry) => {
     if (bt.isObjectExpression(entry.value)) {
       const res = {
         name: entry.key.name,
         desc: getComment(entry.leadingComments).desc,
       };
-      entry.value.properties.forEach(item => {
+      entry.value.properties.forEach((item) => {
         res[item.key.name] = stringifyPropertyValue(item.value);
-      })
+      });
       return res;
     }
     if (bt.isIdentifier(entry.value)) {
@@ -49,7 +49,8 @@ function parsePropsObject(node) {
         name: entry.key.name,
         desc: getComment(entry.leadingComments).desc,
         type: entry.value.name,
-      }
+      };
     }
-  })
+    return null;
+  }).filter(item => item);
 }

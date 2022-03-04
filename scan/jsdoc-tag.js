@@ -65,7 +65,7 @@ function splitNameMatchingBrackets(nameDesc) {
       } else if (c === stringEnd) {
         stringEnd = null;
       }
-    } else if (c === '"' || c === "'") {
+    } else if (c === '"' || c === '\'') {
       stringEnd = c;
     } else if (c === '[') {
       ++stack;
@@ -186,7 +186,7 @@ const cast = (item) => {
  * @param {?string} suffix - A suffix for the regexp. Defaults to an empty string.
  * @returns {RegExp} A regular expression that matches the requested inline tag.
  */
- function regExpFactory(tagName = '\\S+', prefix = '', suffix = '') {
+function regExpFactory(tagName = '\\S+', prefix = '', suffix = '') {
   return new RegExp(`${prefix}\\{@${tagName}\\s+((?:.|\n)+?)\\}${suffix}`, 'i');
 }
 
@@ -206,8 +206,8 @@ const replaceInlineTags = (string, replacers) => {
   function replaceMatch(replacer, tag, match, text) {
     const matchedTag = {
       completeTag: match,
-      tag: tag,
-      text: text,
+      tag,
+      text,
     };
 
     tagInfo.push(matchedTag);
@@ -264,8 +264,7 @@ const replaceInlineTag = (string, tag, replacer) => {
  * @return {module:@jsdoc/tag.inline.InlineTagResult} The updated string, as well as information
  * about the inline tags that were found.
  */
-const extractInlineTag = (string, tag) =>
-  replaceInlineTag(string, tag, (str, { completeTag }) => str.replace(completeTag, ''));
+const extractInlineTag = (string, tag) => replaceInlineTag(string, tag, (str, { completeTag }) => str.replace(completeTag, ''));
 
 
 /**
@@ -367,8 +366,8 @@ function getTagInfo(tagValue, canHaveName, canHaveType) {
   }
 
   return {
-    name: name,
-    typeExpression: typeExpression,
+    name,
+    typeExpression,
     desc: text,
   };
 }
@@ -450,7 +449,7 @@ function getTypeStrings(parsedType, isOutermostType) {
       // if this is the outermost type, we strip the modifiers; otherwise, we keep them
       if (isOutermostType) {
         applications = parsedType.applications
-          .map((application) => catharsis.stringify(application))
+          .map(application => catharsis.stringify(application))
           .join(', ');
         typeString = `${getTypeStrings(parsedType.expression)[0]}.<${applications}>`;
 

@@ -7,7 +7,7 @@ module.exports = {
   getGlobalCallArg,
   getFunctionDefinitions,
   getPropertyOfObjectNode,
-}
+};
 
 const bt = require('@babel/types');
 const { parse: parseTag } = require('./jsdoc-tag');
@@ -35,7 +35,7 @@ function getComment(commentNode) {
   let event;
   let methodTag;
   let module;
-  comments.forEach(line => {
+  comments.forEach((line) => {
     if (line.startsWith('@param ')) {
       params.push(parseTag(line.substring(6)));
     } else if (line.startsWith('@event ')) {
@@ -87,15 +87,15 @@ function isCall(node, funcName, obj) {
       && bt.isIdentifier(node.callee.object)
       && node.callee.object.name === obj
       && bt.isIdentifier(node.callee.property)
-      && node.callee.property.name === funcName
+      && node.callee.property.name === funcName;
   }
   return bt.isCallExpression(node)
     && bt.isIdentifier(node.callee)
-    && node.callee.name === funcName
+    && node.callee.name === funcName;
 }
 
 function getCompOptionsNode(ast) {
-  const body = ast.program.body;
+  const { body } = ast.program;
   const declarationNode = body.find(item => bt.isExportDefaultDeclaration(item));
   if (!declarationNode) return null;
   const { declaration } = declarationNode;
@@ -128,8 +128,8 @@ function getPropertyOfObjectNode(node, key) {
 // }
 
 function getGlobalCallArg(ast, calleeName) {
-  const body = ast.program.body;
-  const result = body.map(item => {
+  const { body } = ast.program;
+  const result = body.map((item) => {
     let callExp;
     if (bt.isExpressionStatement(item)) {
       callExp = item.expression;
@@ -153,14 +153,14 @@ function getGlobalCallArg(ast, calleeName) {
 }
 
 function getFunctionDefinitions(body) {
-  return body.map(node => {
+  return body.map((node) => {
     if (bt.isFunctionDeclaration(node)) {
       if (bt.isIdentifier(node.id) && typeof node.id.name === 'string') {
         // function fn() {}
         return {
           name: node.id.name,
           comment: getComment(node.leadingComments),
-        }
+        };
       }
     }
     if (bt.isVariableDeclaration(node)) {
@@ -173,11 +173,11 @@ function getFunctionDefinitions(body) {
             return {
               name: declaration.id.name,
               comment: getComment(node.leadingComments),
-            }
+            };
           }
         }
       }
     }
     return null;
-  }).filter(item => item)
+  }).filter(item => item);
 }

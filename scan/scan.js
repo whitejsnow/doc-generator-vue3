@@ -34,7 +34,7 @@ function scanFold(foldPath) {
 
 function getVueFiles(dir, res = []) {
   const names = fs.readdirSync(dir);
-  names.forEach(name => {
+  names.forEach((name) => {
     const filePath = path.join(dir, name);
     if (fs.statSync(filePath).isDirectory()) {
       getVueFiles(filePath, res);

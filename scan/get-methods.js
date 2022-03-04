@@ -1,5 +1,5 @@
 // const traverse = require("@babel/traverse").default;
-const bt = require("@babel/types");
+const bt = require('@babel/types');
 const {
   getCompOptionsNode,
   getValueOfObjectNode,
@@ -8,11 +8,11 @@ const {
   getFunctionDefinitions,
   isCall,
   getPropertyOfObjectNode,
-} = require("./util");
+} = require('./util');
 
 module.exports = {
   getMethods,
-}
+};
 
 function getMethods(ast) {
   const options = getCompOptionsNode(ast);
@@ -33,10 +33,10 @@ function parseMethodsObject(node, fnInContext = [], needMethodTag = false) {
   if (!node || !bt.isObjectExpression(node)) return [];
 
   const res = [];
-  node.properties.forEach(entry => {
+  node.properties.forEach((entry) => {
     if (!entry.key) return;
 
-    const name = entry.key.name;
+    const { name } = entry.key;
     let item;
     if (entry.leadingComments) {
       const comment = getComment(entry.leadingComments);
@@ -62,7 +62,7 @@ function parseMethodsInSetup(node) {
   if (!node) return [];
 
   const ctxParamNode = node.params[1];
-  const body = node.body.body;
+  const { body } = node.body;
   let exposed;
   if (bt.isIdentifier(ctxParamNode)) {
     const ctxIdentifier = ctxParamNode.name;

@@ -5,7 +5,7 @@ module.exports = {
 };
 
 function getModule(ast, fileName) {
-  const body = ast.program.body;
+  const { body } = ast.program;
   const leadingComments = body[0] ? body[0].leadingComments : null;
   if (leadingComments) {
     const res = getComment(leadingComments);
