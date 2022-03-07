@@ -75,8 +75,7 @@ function scanFile(filePath) {
     traverse(astJS, eventVisitor);
   }
 
-  const fileName = path.basename(filePath).replace(path.extname(filePath), '');
-  const module = getModule(astJS, fileName);
+  const module = getModule(astJS);
 
   if (module && module.module) {
     return {

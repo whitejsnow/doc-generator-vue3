@@ -4,15 +4,21 @@ module.exports = {
   getModule,
 };
 
-function getModule(ast, fileName) {
-  const { body } = ast.program;
-  const leadingComments = body[0] ? body[0].leadingComments : null;
-  if (leadingComments) {
-    const res = getComment(leadingComments);
-    if (!res.module) {
-      res.module = fileName;
+// const moduleTagReg = /\n\s+\*\s+@module\s+([^\s]+)/;
+const COMMENT_BLOCK = 'CommentBlock';
+
+function getModule(ast) {
+  const { comments } = ast;
+  if (comments) {
+    for (let i = 0; i < comments.length; i++) {
+      const item = comments[i];
+      if (item.type === COMMENT_BLOCK) {
+        const res = getComment([item]);
+        if (res.module) {
+          return res;
+        }
+      }
     }
-    return res.module ? res : null;
   }
-  return fileName ? { module: fileName } : null;
+  return null;
 }
