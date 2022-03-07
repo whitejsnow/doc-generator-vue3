@@ -1,6 +1,6 @@
 {
   "name": "@tencent/doc-generator-vue3",
-  "version": "1.0.4",
+  "version": "1.0.5",
   "description": "vue单文件组件文档生成器",
   "scripts": {
     "dev": "vite",
