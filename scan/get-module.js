@@ -1,4 +1,5 @@
-const { getComment } = require('./util');
+const { getComment, getCompOptionsNode, getValueOfObjectNode } = require('./util');
+const bt = require('@babel/types');
 
 module.exports = {
   getModule,
@@ -8,6 +9,7 @@ module.exports = {
 const COMMENT_BLOCK = 'CommentBlock';
 
 function getModule(ast) {
+  // 先在 CommentBlock 里找显示声明的 module
   const { comments } = ast;
   if (comments) {
     for (let i = 0; i < comments.length; i++) {
@@ -18,6 +20,17 @@ function getModule(ast) {
           return res;
         }
       }
+    }
+  }
+
+  // 在组件选项中取 name 字段
+  const options = getCompOptionsNode(ast);
+  if (options) {
+    const nameNode = getValueOfObjectNode(options, 'name');
+    if (bt.isStringLiteral(nameNode)) {
+      return {
+        module: nameNode.value,
+      };
     }
   }
   return null;
