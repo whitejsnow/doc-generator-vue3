@@ -17,7 +17,10 @@ function getModule(ast) {
       if (item.type === COMMENT_BLOCK) {
         const res = getComment([item]);
         if (res.module) {
-          return res;
+          return {
+            name: res.module,
+            desc: res.desc,
+          };
         }
       }
     }
@@ -27,9 +30,9 @@ function getModule(ast) {
   const options = getCompOptionsNode(ast);
   if (options) {
     const nameNode = getValueOfObjectNode(options, 'name');
-    if (bt.isStringLiteral(nameNode)) {
+    if (bt.isStringLiteral(nameNode) && nameNode.value) {
       return {
-        module: nameNode.value,
+        name: nameNode.value,
       };
     }
   }

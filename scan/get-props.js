@@ -1,6 +1,7 @@
 module.exports = {
   getProps,
 };
+// todo type: Array<>
 
 const bt = require('@babel/types');
 const {

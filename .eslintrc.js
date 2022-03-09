@@ -1,5 +1,6 @@
 module.exports = {
-  globals: {
+  env: {
+    'jest/globals': true,
   },
   extends: [
     '@tencent/eslint-config-tencent',
@@ -10,4 +11,5 @@ module.exports = {
     ecmaVersion: 12,
   },
   rules: {},
+  plugins: ['jest'],
 };

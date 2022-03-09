@@ -1,10 +1,8 @@
 const path = require('path');
 const fs = require('fs');
 const compiler = require('@vue/compiler-sfc');
-// const babel = require('@babel/core');
 const traverse = require('@babel/traverse').default;
 const babelParser = require('@babel/parser');
-// const { compile } = require('vue-template-compiler/build');
 
 const { getProps } = require('./get-props');
 const { getMethods } = require('./get-methods');
@@ -12,18 +10,11 @@ const { getContext } = require('./get-events');
 const { parseTemplate } = require('./get-slots');
 const { getModule } = require('./get-module');
 
-
-exports.scanFold = scanFold;
-exports.scanFile = scanFile;
-
-// function demo() {
-//   const res1 = scanFile('./scan/demo_option.vue');
-//   fs.writeFileSync('./scan/res_option.json', JSON.stringify(res1));
-//   // const res2 = scanFile('./scan/demo_setup.vue');
-//   // fs.writeFileSync('./scan/res_setup.json', JSON.stringify(res2));
-// }
-// demo();
-
+module.exports = {
+  scanFold,
+  scanFile,
+  scanContent,
+};
 
 function scanFold(foldPath) {
   const vueFiles = getVueFiles(foldPath);
@@ -47,46 +38,56 @@ function getVueFiles(dir, res = []) {
 
 function scanFile(filePath) {
   const fileContent = fs.readFileSync(filePath, 'utf-8');
+  return scanContent(fileContent);
+}
+
+function scanContent(fileContent, needModule = true) {
   const out = compiler.parse(fileContent);
-  const scriptContent = (out.descriptor.scriptSetup || out.descriptor.script).content;
+  const script = out.descriptor.scriptSetup || out.descriptor.script;
 
-  const astJS = babelParser.parse(scriptContent, {
-    sourceType: 'module',
-    plugins: [
-      'objectRestSpread',
-      'dynamicImport',
-      'decorators-legacy',
-      'classProperties',
-      'typescript',
-      'jsx',
-    ],
-  });
-  // const astTemplate = compile(out.descriptor.template.content, {
-  //   comments: true,
-  // }).ast;
-  const astTemplate = out.descriptor.template.ast;
-  // fs.writeFileSync('./scan/temp_2.json', JSON.stringify(astTemplate, (k, v) => k === 'parent' ? k : v));
-  // fs.writeFileSync('./scan/temp_3.json', JSON.stringify(out.descriptor.template.ast, (k, v) => k === 'parent' ? k : v));
-  // fs.writeFileSync('./scan/temp_3_attrs.json', JSON.stringify(out.descriptor.template.attrs));
+  let props;
+  let methods;
+  let events;
+  let slots;
+  let module;
 
-  const [getEvents, eventVisitor] = getContext(astJS);
+  if (script) {
+    const astJS = babelParser.parse(script.content, {
+      sourceType: 'module',
+      plugins: [
+        'objectRestSpread',
+        'dynamicImport',
+        'decorators-legacy',
+        'classProperties',
+        'typescript',
+        'jsx',
+      ],
+    });
 
-  if (eventVisitor) {
-    traverse(astJS, eventVisitor);
+    module = getModule(astJS);
+    if (needModule && !module) {
+      return {};
+    }
+
+    const [getEvents, eventVisitor] = getContext(astJS);
+    if (eventVisitor) {
+      traverse(astJS, eventVisitor);
+    }
+    props = getProps(astJS);
+    methods = getMethods(astJS);
+    events = getEvents();
   }
 
-  const module = getModule(astJS);
-
-  if (module && module.module) {
-    return {
-      name: module.module,
-      desc: module.desc,
-      props: getProps(astJS),
-      methods: getMethods(astJS),
-      events: getEvents(),
-      slots: parseTemplate(astTemplate),
-    };
+  if (out.descriptor.template) {
+    slots = parseTemplate(out.descriptor.template.ast);
   }
 
-  return null;
+  return {
+    name: module ? module.name : null,
+    desc: module ? module.desc : null,
+    props,
+    methods,
+    events,
+    slots,
+  };
 }
