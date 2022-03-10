@@ -2,20 +2,53 @@ vue sfc 文档生成器
 ========================
 通过遍历 .vue 文件代码的 AST，找出其中的 prop/method/event/slot 及其对应的注释，返回结果数据或直接用于生成 HTML 文档。
 
+# 安装使用
+```
+tnpm i -D @tencent/doc-generator-vue3
+```
+```javascript
+// 扫描 components 目录下的所有 .vue 文件并输出文档到 docs 目录下，HTML 文档标题为 'My Components'
+require('@tencent/doc-generator-vue3').build({
+  inputDir: './components',
+  outDir: './docs',
+  docTitle: 'My Components',
+});
+
+// 扫描 components 目录下的所有 .vue 文件，返回结果
+const result = require('@tencent/doc-generator-vue3').scanFold('./components');
+
+// 扫描文件 components/comp.vue 并返回结果
+const result = require('@tencent/doc-generator-vue3').scanFile('./components/comp.vue');
+
+// 扫描传入的源码 并返回结果
+const result = require('@tencent/doc-generator-vue3').scanContent(
+  require('fs').readFileSync('./components/comp.vue', 'utf-8')
+);
+```
 
 # 流程原理
 <img src="./vue-doc-gen.png">
 
-使用 @vue/compiler-sfc 对指定的 .vue 文件进行编译，得到 js 和 template 的 AST。
+使用 @vue/compiler-sfc 对指定的 .vue 文件进行编译，得到 js 和 template 的 AST。AST 里每个语句都对应一个节点，如果该语句写有注释，该注释会包含在节点里。
 
-对于通过选项对象定义的组件，在 AST 中找到导出的选项节点，即可找到对应的 prop/method。
+## props的查找
+1. 在 AST 里找到位于顶层上下文的 `export default` 语句，拿到对组件的描述对象（即 vue 文档中所称的“选项”），有这个对象就可以找到 props 字段的值，遍历即可找出所有 props。
+2. 对于`<script setup>`，在 AST 里找到位于顶层上下文的 `defineProps()` 或者 `const props = defineProps()` 调用，拿到它的 arguments，遍历即可。
 
-对于选项里的 setup 函数，通过函数第二个参数找到 expose 函数的名称，然后在 setup 函数的 body 的最外层查找其调用，就可以解析出暴露的 method。
-对于 `<script setup>`，会在节点树的最外层找到 defineProps/defineExpose 的调用，得到其调用的参数，解析出 prop/method。defineExpose里的方法，其定义的地方可能是在 defineExpose 之外，所以还要记录下同一个闭包里声明的函数。
+## methods的查找
+1. 类似于 props 的查找，找到组件选项对象的 methods 字段即可。methods 里可能大多数方法都是私有的，因此需要检查方法的注释里是有带有`@method`标识，有则视为一个暴露出去的方法。
+2. 对于 `<script setup>`，在 AST 里找到位于顶层上下文的 `defineExpose()`调用，那到它的 arguments，遍历即可。defineExpose 里的方法，其定义的地方可能是在 defineExpose 之外，所以还要记录下同一个闭包里声明的函数，与 defineExpose 里的 key 做比对。
+3. 查找 setup 函数里暴露的方法与`<script setup>`，但需要根据函数第二个参数找到 caller。
 
-对于 events 的查找，无论是 setup 函数还是 `<script setup>`，都需要用 @babel/traverse 来遍历 AST 节点树。选项的情况下，直接查找 `this.$emit()` 的调用即可；`<script setup>`情况下，找到 `const emit = defineEmits()` 的调用，然后遍历 AST 查找 `emit('some-event')` 的调用。
+## events的查找
+因为 events 可以调用在代码的任何角落里，因此无论是 setup 函数还是 `<script setup>`，都需要用 @babel/traverse 来遍历 AST 节点树。
+1. 对于使用选项的代码，直接查找 `this.$emit()` 的调用即可
+2. 对于`<script setup>`，找到 `const emit = defineEmits()` 的调用，然后遍历 AST 查找 `emit('some-event')` 的调用即可。
 
-上述查找方法并不完全严谨，例如 expose 里的方法定义在 expose 之外时，只能识别固定的语法，而一些灵活写法识别比较麻烦，例如：
+## 存在的问题
+显然上述查找方法并不严谨，例如：
+1. 遍历到的 emit('')可能并不是 `defineEmits` 的返回值，而是在某个上下文里新定义的对象。
+2. expose 里的方法定义在 expose 之外时，只能识别固定的语法，而一些灵活写法识别比较麻烦，例如：
 ```javascript
 const fn = () => 1
 expose({
