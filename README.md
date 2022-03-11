@@ -19,7 +19,8 @@ require('@tencent/doc-generator-vue3').build({
 扫描目标文件夹，使用结果数据生成HTML文档。
 ```javascript
 function build(options: {
-  inputDir: string, // 此目录下的 .vue 文件都会被扫描
+  include, // 需要扫描的文件
+  exclude?, // 不要被扫描的文件
   outDir: string, // 生成的结果文档输出到的目标文件夹
   docTitle?: string, // 生成的 HTML 文档的 title
 }): void

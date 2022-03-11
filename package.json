@@ -8,6 +8,9 @@
     "preview": "vite preview",
     "test": "jest --no-cache"
   },
+  "bin": {
+    "doc-gen": "bin/index.js"
+  },
   "files": [
     "index.js",
     "scan",
@@ -27,6 +30,7 @@
     "@tencent/eslint-config-tencent": "^0.16.0",
     "@types/jest": "^27.4.1",
     "@vitejs/plugin-vue": "^2.0.0",
+    "commander": "^9.0.0",
     "eslint": "^8.6.0",
     "eslint-plugin-jest": "^26.1.1",
     "fast-glob": "^3.2.11",

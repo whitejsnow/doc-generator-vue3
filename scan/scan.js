@@ -1,9 +1,10 @@
-const path = require('path');
 const fs = require('fs');
 const compiler = require('@vue/compiler-sfc');
 const traverse = require('@babel/traverse').default;
 const babelParser = require('@babel/parser');
+const fg = require('fast-glob');
 
+const { getConfig } = require('./config');
 const { getProps } = require('./get-props');
 const { getMethods } = require('./get-methods');
 const { getContext } = require('./get-events');
@@ -16,23 +17,20 @@ module.exports = {
   scanContent,
 };
 
-function scanFold(foldPath) {
-  const vueFiles = getVueFiles(foldPath);
-  console.log(vueFiles);
-  const res = vueFiles.map(filePath => scanFile(filePath)).filter(item => !!item);
-  return res;
-}
+function scanFold(config) {
+  let { include, exclude } = getConfig(config);
 
-function getVueFiles(dir, res = []) {
-  const names = fs.readdirSync(dir);
-  names.forEach((name) => {
-    const filePath = path.join(dir, name);
-    if (fs.statSync(filePath).isDirectory()) {
-      getVueFiles(filePath, res);
-    } else if (name.endsWith('.vue')) {
-      res.push(filePath);
-    }
-  });
+  if (typeof include === 'string') include = [include];
+  if (typeof exclude === 'string') exclude = [exclude];
+  const patterns = [
+    '!node_modules/**/*.vue',
+    ...include,
+    ...exclude.map(i => `!${i}`),
+  ];
+  const files = fg.sync(patterns);
+
+  console.log(files);
+  const res = files.map(filePath => scanFile(filePath)).filter(item => !!item);
   return res;
 }
 
