@@ -1,6 +1,6 @@
 {
   "name": "@tencent/doc-generator-vue3",
-  "version": "1.0.5",
+  "version": "1.0.7",
   "description": "vue单文件组件文档生成器",
   "scripts": {
     "dev": "vite",
@@ -14,28 +14,24 @@
   "files": [
     "index.js",
     "scan",
-    "dist"
+    "template",
+    "bin"
   ],
   "dependencies": {
-    "@babel/core": "^7.16.7",
-    "@babel/plugin-transform-typescript": "^7.16.7",
     "@vue/compiler-sfc": "^3.2.26",
-    "@vuese/parser": "^2.10.3",
-    "jsdoc-api": "^7.1.0",
-    "vue": "^3.2.25",
-    "vue-template-compiler": "^2.5.21",
-    "vuex": "^4.0.2"
+    "commander": "^9.0.0",
+    "fast-glob": "^3.2.11"
   },
   "devDependencies": {
     "@tencent/eslint-config-tencent": "^0.16.0",
     "@types/jest": "^27.4.1",
     "@vitejs/plugin-vue": "^2.0.0",
-    "commander": "^9.0.0",
     "eslint": "^8.6.0",
     "eslint-plugin-jest": "^26.1.1",
-    "fast-glob": "^3.2.11",
     "typescript": "^4.4.4",
     "vite": "^2.7.2",
-    "vue-tsc": "^0.29.8"
+    "vue-tsc": "^0.29.8",
+    "vue": "^3.2.25",
+    "vuex": "^4.0.2"
   }
 }

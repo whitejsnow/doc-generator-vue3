@@ -12,12 +12,12 @@ const { parseTemplate } = require('./get-slots');
 const { getModule } = require('./get-module');
 
 module.exports = {
-  scanFold,
+  scan,
   scanFile,
   scanContent,
 };
 
-function scanFold(config) {
+function scan(config) {
   let { include, exclude } = getConfig(config);
 
   if (typeof include === 'string') include = [include];

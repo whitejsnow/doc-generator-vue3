@@ -29,7 +29,7 @@ function build(options: {
 
 扫描目标文件夹中的 .vue 文件，返回扫描结果。
 ```javascript
-function scanFold(path: string): Result[]
+function scan(path: string): Result[]
 ```
 <br/>
 

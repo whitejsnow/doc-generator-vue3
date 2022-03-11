@@ -1,14 +1,14 @@
 const fs = require('fs');
 const path = require('path');
 const mkdirp = require('mkdirp');
-const { scanFold } = require('./scan');
+const { scan } = require('./scan');
 const { getConfig } = require('./config');
 
 const DIR_TEMPLATE = '../template';
 
 exports.build = async (config) => {
   const { outDir, title } = getConfig(config);
-  const res = scanFold(config).filter(item => item.name);
+  const res = scan(config).filter(item => item.name);
 
   getTemplate().forEach(([relFilePath, absFilePath]) => {
     const dest = path.join(outDir, path.relative(DIR_TEMPLATE, relFilePath));

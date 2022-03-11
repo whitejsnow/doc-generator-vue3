@@ -1,8 +1,8 @@
-const { scanFold, scanFile, scanContent } = require('./scan/scan');
+const { scan, scanFile, scanContent } = require('./scan/scan');
 const { build } = require('./scan/build');
 
 module.exports = {
-  scanFold,
+  scan,
   scanFile,
   scanContent,
   build,
