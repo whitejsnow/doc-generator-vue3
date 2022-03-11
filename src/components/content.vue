@@ -39,7 +39,7 @@ const config = {
   prop: {
     name: { text: 'Name' },
     desc: { text: 'Description' },
-    type: { text: 'Type' },
+    type: { text: 'Type', render: props => props.data instanceof Array ? props.data.join(' | ') : props.data },
     default: { text: 'Default' },
     required: { text: 'Required' },
   },

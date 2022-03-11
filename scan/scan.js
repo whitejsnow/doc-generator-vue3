@@ -41,7 +41,7 @@ function scanFile(filePath) {
   return scanContent(fileContent);
 }
 
-function scanContent(fileContent, needModule = true) {
+function scanContent(fileContent) {
   const out = compiler.parse(fileContent);
   const script = out.descriptor.scriptSetup || out.descriptor.script;
 
@@ -65,9 +65,6 @@ function scanContent(fileContent, needModule = true) {
     });
 
     module = getModule(astJS);
-    if (needModule && !module) {
-      return {};
-    }
 
     const [getEvents, eventVisitor] = getContext(astJS);
     if (eventVisitor) {

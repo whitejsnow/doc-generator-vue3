@@ -12,6 +12,8 @@ const {
   getGlobalCallArg,
 } = require('./util');
 
+const TYPE = 'type';
+
 function getProps(ast) {
   const propsObj = getPropsObject(ast);
   if (propsObj) {
@@ -41,17 +43,32 @@ function parsePropsObject(node) {
         desc: getComment(entry.leadingComments).desc,
       };
       entry.value.properties.forEach((item) => {
-        res[item.key.name] = stringifyPropertyValue(item.value);
+        if (item.key.name === TYPE) {
+          res.type = getType(item.value);
+        } else {
+          res[item.key.name] = stringifyPropertyValue(item.value);
+        }
       });
       return res;
     }
-    if (bt.isIdentifier(entry.value)) {
+    const type = getType(entry.value);
+    if (type) {
       return {
         name: entry.key.name,
         desc: getComment(entry.leadingComments).desc,
-        type: entry.value.name,
+        type,
       };
     }
     return null;
   }).filter(item => item);
+}
+
+function getType(node) {
+  if (bt.isIdentifier(node)) {
+    return node.name;
+  }
+  if (bt.isArrayExpression(node)) {
+    return node.elements.filter(item => bt.isIdentifier(item)).map(item => item.name);
+  }
+  return null;
 }

@@ -6,6 +6,7 @@ export default defineConfig({
   base: './',
   build: {
     target: 'es2015',
+    outDir: 'template'
   },
   plugins: [vue()]
 })
