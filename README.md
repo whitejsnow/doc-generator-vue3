@@ -9,7 +9,8 @@ tnpm i -D @tencent/doc-generator-vue3
 ```javascript
 // 扫描 components 目录下的所有 .vue 文件并输出文档到 docs 目录下，HTML 文档标题为 'My Components'
 require('@tencent/doc-generator-vue3').build({
-  inputDir: './components',
+  include: './components/**/*.vue',
+  exclude: '**/demo.vue',
   outDir: './docs',
   docTitle: 'My Components',
 });
@@ -19,10 +20,10 @@ require('@tencent/doc-generator-vue3').build({
 扫描目标文件夹，使用结果数据生成HTML文档。
 ```javascript
 function build(options: {
-  include, // 需要扫描的文件
-  exclude?, // 不要被扫描的文件
-  outDir: string, // 生成的结果文档输出到的目标文件夹
-  docTitle?: string, // 生成的 HTML 文档的 title
+  include?: string|string[], // 需要扫描的文件
+  exclude?: string|string[], // 不要被扫描的文件
+  outDir?: string, // 生成的结果文档输出到的目标文件夹
+  title?: string, // 生成的 HTML 文档的 title
 }): void
 ```
 <br/>
@@ -258,12 +259,8 @@ defineExpose({
 ```
 
 # TODO
-* api 提供更丰富的使用参数。
 * 结果支持hook修改。
-* 字段不要全部是 string ，转 string 的操作应交给 html 渲染器。
-* 项目在搭建时没有去做架构设计，文件、代码结构还有待优化。
 * 没有支持一些少见的写法，详见单测。
-* 支持cli。
 * 支持watch。
 * 考虑`<script setup>`与`<script>`共存。
 

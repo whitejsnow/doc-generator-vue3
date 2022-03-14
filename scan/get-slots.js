@@ -1,4 +1,4 @@
-// copied from vuese parseTemplate.ts
+// copied and modified from vuese parseTemplate.ts
 
 module.exports = {
   parseTemplate,
