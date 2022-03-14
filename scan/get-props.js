@@ -46,7 +46,11 @@ function parsePropsObject(node) {
         if (item.key.name === TYPE) {
           res.type = getType(item.value);
         } else {
-          res[item.key.name] = stringifyPropertyValue(item.value);
+          if (bt.isObjectProperty(item)) {
+            res[item.key.name] = stringifyPropertyValue(item.value);
+          } else if (bt.isObjectMethod(item)) {
+            res[item.key.name] = '';
+          }
         }
       });
       return res;

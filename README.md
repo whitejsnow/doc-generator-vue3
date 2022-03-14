@@ -3,9 +3,23 @@ vue sfc 文档生成器
 通过遍历 .vue 文件代码的 AST，找出其中的 prop/method/event/slot 及其对应的注释，返回结果数据或直接用于生成 HTML 文档。
 
 # 安装使用
+安装，可全局安装，也可项目内安装
 ```
-tnpm i -D @tencent/doc-generator-vue3
+tnpm i -g @tencent/doc-generator-vue3
 ```
+<br/>
+
+命令行生成 HTML 文档，会读取当前目录下的 doc-gen.config.js，该文件不存在则使用默认配置
+```
+doc-gen gen
+```
+指定配置文件
+```
+doc-gen gen --config some-config.js
+```
+<br/>
+
+API调用
 ```javascript
 // 扫描 components 目录下的所有 .vue 文件并输出文档到 docs 目录下，HTML 文档标题为 'My Components'
 require('@tencent/doc-generator-vue3').build({
@@ -15,6 +29,34 @@ require('@tencent/doc-generator-vue3').build({
   docTitle: 'My Components',
 });
 ```
+
+# 配置文件
+使用命令行调用时，默认读取当前目录下的 doc-gen.config.js 文件。也可在命令里指定配置文件。
+
+## include
+* Type: `string`|`string[]`
+* Default: `'**/*.vue'`
+
+需要扫描的文件。
+
+## exclude
+* Type: `string`|`string[]`
+* Default: `[]`
+
+不要被扫描的文件。
+
+## outDir
+* Type: `string`
+* Default: `'docs'`
+
+生成文档的输出目录。
+
+## title
+* Type: `string`
+* Default: `组件库`
+
+生成 HTML 文档的title。
+
 
 # API
 扫描目标文件夹，使用结果数据生成HTML文档。
@@ -110,7 +152,7 @@ type Result = {
 
 ## 存在的问题
 显然上述查找方法并不严谨，例如：
-1. 遍历到的 emit('')可能并不是 `defineEmits` 的返回值，而是在某个上下文里新定义的对象。
+1. 遍历到的 emit('')，emit 对象可能并不是 `defineEmits` 的返回值，而是在某个上下文里新定义的对象。
 2. expose 里的方法定义在 expose 之外时，只能识别固定的语法，而一些灵活写法识别比较麻烦，例如：
 ```javascript
 const fn = () => 1
@@ -260,6 +302,7 @@ defineExpose({
 ```
 
 # TODO
+* 支持将配置写在命令行参数。
 * 结果支持hook修改。
 * 没有支持一些少见的写法，详见单测。
 * 支持watch。
