@@ -106,6 +106,7 @@ type Result = {
 2. 对于`<script setup>`，找到 `const emit = defineEmits()` 的调用，然后遍历 AST 查找 `emit('some-event')` 的调用即可。
 
 ## slots的查找
+@vue/compiler-sfc 编译 .vue 文件后可以直接拿到 template 的 AST，其结构比较简单，递归遍历之，找出里面 tag 为 `slot` 的节点及其相邻的注释节点即可。
 
 ## 存在的问题
 显然上述查找方法并不严谨，例如：
